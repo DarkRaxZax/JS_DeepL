@@ -11,12 +11,8 @@ var post = {
                 }
             ],
             'lang': {
-                'user_preferred_langs': [
-                  process.argv[3] || 'EN',
-                  process.argv[4] || 'ES'
-                ],
-                'source_lang_user_selected': process.argv[3] || 'EN',
-                'target_lang': process.argv[4] || 'ES'
+                'source_lang_user_selected': check_lang(process.argv[3]) || 'EN',
+                'target_lang': check_lang(process.argv[4]) || 'ES'
             },
             'priority': -1
         },
@@ -34,12 +30,39 @@ var post_settings = {
     }
 };
 
+// Guarantees that the language is accepted by DeepL. Otherwise, returns 0
+// If it returns 0, a default value will be picked
+// In the case of source_lang_user_selected, 'EN'
+// In the case of target_lang, 'ES'
+function check_lang(lang){
+  switch(lang){
+    case 'EN':
+    case 'ES':
+    case 'FR':
+    case 'IT':
+    case 'DE':
+    case 'PL':
+    case 'NL': return lang; break;
+    default: return 0;
+  }
+}
+
 var send_req = https.request(post_settings, function(ret){
   ret.on('data', function(data){
     var translations = JSON.parse(data).result.translations[0].beams;
     var output = "";
-    for(i in translations){
-      output += translations[i].postprocessed_sentence + " ";
+    // The API may return more than one result, which is useful when translating
+    // spare words but becomes a problem for whole sentences
+    // In order to reduce the results, we'll distinguish between a word and a
+    // sentence depending on whether the string has a space (" ") or not
+    if (process.argv[2].indexOf(" ") == -1){
+      // If it's a single word, we'll return all the results
+      for(i in translations){
+        output += translations[i].postprocessed_sentence + " ";
+      }
+    } else {
+      // If it's a sentence, we'll return the first result
+      output += translations[0].postprocessed_sentence;
     }
     console.log(output);
   });
