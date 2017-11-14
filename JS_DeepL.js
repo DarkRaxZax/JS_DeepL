@@ -50,22 +50,28 @@ function check_lang(lang){
 var send_req = https.request(post_settings, function(ret){
   ret.on('data', function(data){
     var translations = JSON.parse(data).result.translations[0].beams;
-    var output = "";
-    // The API may return more than one result, which is useful when translating
-    // spare words but becomes a problem for whole sentences
-    // In order to reduce the results, we'll distinguish between a word and a
-    // sentence depending on whether the string has a space (" ") or not
-    if (process.argv[2].indexOf(" ") == -1){
-      // If it's a single word, we'll return all the results
-      for(i in translations){
-        output += translations[i].postprocessed_sentence + " ";
+    // If DeepL retrieves any translation
+    if(translations[0] != undefined){
+      var output = "";
+      // The API may return more than one result, which is useful when translating
+      // spare words but becomes a problem for whole sentences
+      // In order to reduce the results, we'll distinguish between a word and a
+      // sentence depending on whether the string has a space (" ") or not
+      if (process.argv[2].indexOf(" ") == -1){
+        // If it's a single word, we'll return all the results
+        for(i in translations){
+          output += translations[i].postprocessed_sentence + " ";
+        }
+      } else {
+        // If it's a sentence, we'll return the first result
+        output += translations[0].postprocessed_sentence;
       }
+      console.log(output);
     } else {
-      // If it's a sentence, we'll return the first result
-      output += translations[0].postprocessed_sentence;
+      // If DeepL does not retrieve a translation
+      console.log("Translation not available");
     }
-    console.log(output);
-  });
+    });
 });
 
 
